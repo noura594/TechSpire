@@ -1,0 +1,48 @@
+name: Workflow 1 - Folders 1-4
+
+on:
+  schedule:
+    # Run daily at 1:00 AM UTC
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-folders:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        folder: [mn_sub1, mn_sub2, mn_sub3, mn_sub4]
+      fail-fast: false
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        playwright install chromium
+    
+    - name: Run ${{ matrix.folder }}
+      run: |
+        python -m ${{ matrix.folder }}.main
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: ${{ secrets.AWS_REGION }}
+        S3_BUCKET: ${{ secrets.S3_BUCKET }}
+    
+    - name: Upload artifacts on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.folder }}-logs
+        path: |
+          *.log
+          temp/
