@@ -35,8 +35,7 @@ jobs:
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: ${{ secrets.AWS_REGION }}
-        S3_BUCKET: ${{ secrets.S3_BUCKET }}
+        S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
     
     - name: Upload artifacts on failure
       if: failure()
