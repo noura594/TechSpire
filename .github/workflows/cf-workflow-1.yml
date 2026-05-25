@@ -1,0 +1,47 @@
+name: CF Workflow 1 - Folders 1-4
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-folders:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        folder: [mn_sub1, mn_sub2, mn_sub3, mn_sub4]
+      fail-fast: false
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        playwright install chromium
+    
+    - name: Run CF/${{ matrix.folder }}
+      run: |
+        python -m CF.${{ matrix.folder }}.main
+      env:
+        CF_R2_ACCESS_KEY_ID: ${{ secrets.CF_R2_ACCESS_KEY_ID }}
+        CF_R2_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_SECRET_ACCESS_KEY }}
+        CF_R2_ENDPOINT_URL: ${{ secrets.CF_R2_ENDPOINT_URL }}
+        CF_R2_BUCKET_NAME: ${{ secrets.CF_R2_BUCKET_NAME }}
+    
+    - name: Upload artifacts on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cf-${{ matrix.folder }}-logs
+        path: |
+          *.log
+          temp/

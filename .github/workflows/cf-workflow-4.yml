@@ -1,0 +1,50 @@
+name: CF Workflow 4 - Folders 13-15
+
+on:
+  workflow_run:
+    workflows: ["CF Workflow 3 - Folders 9-12"]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  run-folders:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    strategy:
+      matrix:
+        folder: [mn_sub13, mn_sub14, mn_sub15]
+      fail-fast: false
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        playwright install chromium
+    
+    - name: Run CF/${{ matrix.folder }}
+      run: |
+        python -m CF.${{ matrix.folder }}.main
+      env:
+        CF_R2_ACCESS_KEY_ID: ${{ secrets.CF_R2_ACCESS_KEY_ID }}
+        CF_R2_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_SECRET_ACCESS_KEY }}
+        CF_R2_ENDPOINT_URL: ${{ secrets.CF_R2_ENDPOINT_URL }}
+        CF_R2_BUCKET_NAME: ${{ secrets.CF_R2_BUCKET_NAME }}
+    
+    - name: Upload artifacts on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cf-${{ matrix.folder }}-logs
+        path: |
+          *.log
+          temp/
